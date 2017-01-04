@@ -10,14 +10,14 @@ MYSQLDBS=("wordpress" "lychee")
 TMPDIR="/tmp/backup/"
 
 # Glacier Config
-SANDBOX="false"
+SANDBOX=false
 CREDENTAILS="aws.properties"
 ENDPOINT="https://glacier.us-east-1.amazonaws.com"
 VAULT="myvault"
 PARTSIZE=8388608
 
 ### Start of Script ###
-
+STARTPATH=`pwd`
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 
 BACKUPDIR=`echo $HOSTNAME"-"$TIMESTAMP`
@@ -39,15 +39,13 @@ done
 cd $TMPDIR;
 tar -zcf $BACKUPDIR".tar.gz" $BACKUPDIR  # Compress the folder in preparation of the Glacier Upload
 
-if [ $SANDBOX -eq "false" ]; then
+if $SANDBOX; then
+    echo "Sandox mode is active, skipping upload and delete"
+else
     echo "Uploading "$BACKUPDIR".tar.gz to Glacier"
-    java -jar glacieruploader.jar --endpoint $ENDPOINT --vault $VAULT --credentials $CREDENTAILS --multipartupload $BACKUPDIR".tar.gz" --partsize $PARTSIZE
+    java -jar $STARTPATH"/""glacieruploader.jar" --endpoint $ENDPOINT --vault $VAULT --credentials $STARTPATH"/"$CREDENTAILS --multipartupload $BACKUPDIR".tar.gz" --partsize $PARTSIZE
 
     # Clean Up copies and ZIP file
     rm -rf $TMPDIR
     rm -f $BACKUPDIR".tar.gz"
-fi
-
-if [ !($SANDBOX -eq "false")]; then
-    echo "Sandox mode is active, skipping upload and delete"
 fi
